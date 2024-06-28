@@ -26,7 +26,7 @@ pip3 install -r requirements.txt
 
 ## Usage
 
-1. Add your API key in line 19.
+1. Add your API key to the file `my_api_key.txt`.
 2. Run the script.
 3. Hold down F6, in this window or another: key down -> recording start; key up -> send for transcription.
 4. Paste transcription result from your clipboard.

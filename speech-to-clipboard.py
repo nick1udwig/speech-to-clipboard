@@ -14,10 +14,20 @@ from pynput import keyboard
 sample_rate = 44100
 recording = False
 audio_data = []
+MIN_DURATION_SECS = 0.1
+
+with open('./my_api_key.txt', 'r') as f:
+    api_key = f.read().strip()
 
 client = openai.OpenAI(
-    api_key='lol'
+    api_key=api_key,
 )
+
+def check_audio_duration(filename, min_duration=MIN_DURATION_SECS):
+    with sf.SoundFile(filename) as file:
+        # Calculate the duration in seconds
+        duration_seconds = len(file) / file.samplerate
+    return duration_seconds >= min_duration
 
 def start_recording():
     global recording, audio_data
@@ -29,28 +39,33 @@ def start_recording():
 def stop_recording():
     global recording
     recording = False
-    print('Recording stopped. Transcribing...')
-    transcribe_audio()
+    temp_file = write_audio_file(audio_data)
+    if check_audio_duration(temp_file.name, min_duration=MIN_DURATION_SECS):
+        print('Recording stopped. Transcribing...')
+        transcribe_audio(temp_file)
+    else:
+        print('Recording stopped. False start (duration < {MIN_DURATION_SECS} second).')
 
 def record_callback(indata, frames, time, status):
     if recording:
         audio_data.extend(indata.copy())
 
-def transcribe_audio():
-    global audio_data
-    #audio_np = np.array(audio_data, dtype=np.float32)
-    #audio_bytes = bytes(audio_np.tobytes())
+def write_audio_file(audio_data):
     audio_np = np.concatenate(audio_data, axis=0)
     temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.wav')
-    #temp_file = 'hello.wav'
-    #sf.write(temp_file, audio_np, sample_rate)
     sf.write(temp_file.name, audio_np, sample_rate)
+    return temp_file
 
+def transcribe_audio(temp_file):
     with open(temp_file.name, 'rb') as audio_bytes:
-        transcript = client.audio.transcriptions.create(
-            model="whisper-1",
-            file=audio_bytes,
-        )
+        try:
+            transcript = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=audio_bytes,
+            )
+        except Exception as e:
+            print(f'got exception {e} while trying to transcribe')
+            return
     print(f'{transcript.text}')
     pyperclip.copy(transcript.text)
 
