@@ -14,7 +14,7 @@ from pynput import keyboard
 sample_rate = 44100
 recording = False
 audio_data = []
-MIN_DURATION_SECS = 0.1
+MIN_DURATION_SECS = 0.3
 
 with open('./my_api_key.txt', 'r') as f:
     api_key = f.read().strip()
@@ -44,7 +44,7 @@ def stop_recording():
         print('Recording stopped. Transcribing...')
         transcribe_audio(temp_file)
     else:
-        print('Recording stopped. False start (duration < {MIN_DURATION_SECS} second).')
+        print(f'Recording stopped. False start (duration < {MIN_DURATION_SECS} second).')
 
 def record_callback(indata, frames, time, status):
     if recording:
